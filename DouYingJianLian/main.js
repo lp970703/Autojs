@@ -8,8 +8,9 @@ importClass("jxl.JXLException")
 importClass("jxl.Sheet")
 
 var ExcelUntil = require('ExcelUntil.js');
-var CycloneUntil = require('CycloneUntil.js');
-var StartAppUntil = require('StartAppUntil.js');
+// var CycloneUntil = require('CycloneUntil.js');
+// var ImageUntil = require('ImageUntil.js');
+var AppUntil = require('AppUntil.js');
 
 
 ui.layout(
@@ -77,6 +78,10 @@ let InputExcelRoute = '';
 let SiXinMSG = '';
 let DouYinNameList = '';
 
+// 3、授予相机拍照权限
+// ImageUntil.getRequestScreenCapture();
+
+
 ui.callback.click(() =>{
     // 取出填写的Excel默认路径,建联话术语句
     InputExcelRoute = ui.InputExcelRoute.text();
@@ -87,55 +92,50 @@ ui.callback.click(() =>{
 
     // 这里需要启用多线程，因为在ui下他会每16ms会执行一次刷新页面，如果直接把sleep这种阻塞线程或者需要长时间回调（例如调接口）这种，
     // 在ui页面上会造成长时间等待，故新启动一个线程去处理这些任务
-    threads.start(function () {
+    threads.start(function () { 
+        // 1、返回桌面
         home();
-        new StartAppUntil("抖音",5000).start();sleep(2000);
+        // 2、打开抖音
+        AppUntil.start("抖音",5000);sleep(2000);
+        // 3、授予相机拍照权限
+        getRequestScreenCapture();
+        // 4、查看excel数据是否加载完成
         console.log('DouYinNameList:' +DouYinNameList);
+        // 5、执行主函数
+        DoMainProcess(DouYinNameList, SiXinMSG);
     })
-    // 执行主函数
-    // DoMainProcess(DouYinNameList, SiXinMSG);
 });
 
-function close_AD(){
-    //函数功能 关闭启动广告
-    threads.start(function () {
-        while(textMatches(/.*跳过.*/).exists() == true){
-            new CycloneUntil(text,/.*跳过.*/,true,true,"click",1).elemClick()
-            console.log("点击了跳过广告")
-        }
-    })
-    threads.start(function () {
-        while(descMatches(/.*跳过.*/).exists() == true){
-            new CycloneUntil(desc,/.*跳过.*/,true,true,"click",1).elemClick()
-            console.log("点击了跳过广告")
-        }
-    })
+
+
+function DoMainProcess(DouYinNameList, SiXinMSG) {
+    // // 得到
+    let img = captureScreen();
+    let time = new Date().getTime();
+    let clipImgSrc = "/sdcard/脚本/excel/" + time + ".png";
+    images.save(img, clipImgSrc);
+    
+    log('执行结束');
 }
 
-function stopApp(packageName) {
-    var name = getPackageName(packageName); 
-    if(!name){
-        if(getAppName(packageName)){
-            name = packageName;
-        }else{
-            return false;
-        } 
-    }
-    app.openAppSetting(name);
-    text(app.getAppName(name)).waitFor();  
-    let is_sure = textMatches(/(.*强.*|.*停.*|.*结.*|.*行.*)/).findOne();
-    if (is_sure.enabled()) {
-        textMatches(/(.*强.*|.*停.*|.*结.*|.*行.*)/).findOne().click();sleep(1200);
-        // textMatches(/(.*确.*|.*定.*)/).findOne().click();
-        text("强行停止").findOne().click();
-        log(app.getAppName(name) + "应用已被关闭");
-        sleep(1000);
-        back();
-    } else {
-        log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
-        back();
-    }
-}
-// function DoMainProcess(DouYinNameList, SiXinMSG) {
+/**
+ * 申请截图权限：只需要申请一次
+ * *****************这个必须得在main函数里面写新的线程，如果用module导线程会很慢，而且会报错
+ */
+ function getRequestScreenCapture() {
+    // 1、开启线程，找到点击立即开始，并且触发事件（只需要执行一次就可以）
+    let thread = threads.start(function () {
+    console.log('获取截图权限');
+    let beginBtn;
+        if (beginBtn = classNameContains("Button").textContains("立即开始").findOne(2000)) {
+            beginBtn.click();sleep(1000);
+        }
+    });
 
-// }
+    if(!requestScreenCapture()){
+        toast("请求截图失败");
+        exit();
+    }
+
+    thread.interrupt(); // 停止该线程
+}
