@@ -8,7 +8,7 @@ importClass("jxl.JXLException")
 importClass("jxl.Sheet")
 
 var ExcelUntil = require('ExcelUntil.js');
-// var CycloneUntil = require('CycloneUntil.js');
+var CycloneUntil = require('CycloneUntil.js');
 // var ImageUntil = require('ImageUntil.js');
 var AppUntil = require('AppUntil.js');
 
@@ -104,18 +104,284 @@ ui.callback.click(() =>{
         // 5、执行主函数
         DoMainProcess(DouYinNameList, SiXinMSG);
     })
-});
+    threads.shutDownAll();
+});  
 
-
+function stopApp(packageName) {
+    var name = getPackageName(packageName); 
+    if(!name){
+        if(getAppName(packageName)){
+            name = packageName;
+        }else{
+            return false;
+        } 
+    }
+    app.openAppSetting(name);
+    text(app.getAppName(name)).waitFor();  
+    let is_sure = textMatches(/(.*强.*|.*停.*|.*结.*|.*行.*)/).findOne();
+    if (is_sure.enabled()) {
+        textMatches(/(.*强.*|.*停.*|.*结.*|.*行.*)/).findOne().click();sleep(1200);
+        // textMatches(/(.*确.*|.*定.*)/).findOne().click();
+        text("强行停止").findOne().click();
+        log(app.getAppName(name) + "应用已被关闭");
+        sleep(1000);
+        back();
+    } else {
+        log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
+        back();
+    }
+}
 
 function DoMainProcess(DouYinNameList, SiXinMSG) {
     // // 得到
-    let img = captureScreen();
-    let time = new Date().getTime();
-    let clipImgSrc = "/sdcard/脚本/excel/" + time + ".png";
-    images.save(img, clipImgSrc);
+    // let img = captureScreen();
+    // let time = new Date().getTime();
+    // let clipImgSrc = "/sdcard/脚本/excel/" + time + ".png";
+    // images.save(img, clipImgSrc);
+    console.log('开始执行主流程');
+    click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(1500);
+    startlabel:
+    for(let itemArray = 0; itemArray < DouYinNameList.length; itemArray++) {
+        console.log('开始循环');
+        try{
+            num ++
+            // 防止抖音崩溃到主页
+            if(num == 50){
+                stopApp("抖音");
+                AppUntil.start("抖音",5000);
+                // new CycloneUntil.CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(1500);
+                click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(1500);
     
+            }
+            try{
+                setText(itemArray[2]);sleep(3000);
+            }catch(error){
+                while(text("请完成下列验证后继续:").exists() == true){
+                    ImageUntil.slideRecognition();
+                }
+                setText(itemArray[2]);sleep(3000);
+            }
+            try{
+                // new CycloneUntil.CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(2000);
+                click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(2000);
+            }catch(error){
+                while(text("请完成下列验证后继续:").exists() == true){
+                    ImageUntil.slideRecognition();
+                }
+                // new CycloneUntil.CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(2000);
+                click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(2000);
+            }
+            if(text("您今日的搜索次数已达上限").exists() == true){
+                toastLog("上限了。结束运行")
+                break startlabel;
+            }
+            if(id("android:id/text1").exists() == true){
+                try{
+                    new CycloneUntil.CyclonePublic(id,"android:id/text1",false,false,"click",2).elemClick();sleep(1200);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(id,"android:id/text1",false,false,"click",2).elemClick();sleep(1200);
+                }
+            }
+            if(descMatches(".*抖音号: .*").find()[0].text().split("抖音号: ")[1] != "" ){
+                try{
+                    click(descMatches(".*抖音号:  .*").find()[0].bounds().centerX(),descMatches(".*抖音号: .*").find()[0].bounds().centerY());sleep(2500);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    try{
+                        click(descMatches(".*抖音号:  .*").find()[0].bounds().centerX(),descMatches(".*抖音号: .*").find()[0].bounds().centerY());sleep(2500);
+                    }catch(error){
+                        //抖音号不匹配
+                        continue;
+                    }
+                }
+            }else{
+                toast("抖音号不匹配 继续下一个任务")
+                continue;
+            }
+            //点关注私信
+            if(id("com.ss.android.ugc.aweme:id/ln1").exists() == true){
+                try{
+                    new CycloneUntil.CyclonePublic(id,"com.ss.android.ugc.aweme:id/ln1",false,false,"click",0).elemClick();sleep(2500);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(id,"com.ss.android.ugc.aweme:id/ln1",false,false,"click",0).elemClick();sleep(2500);
+                }
+                try{
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }
+    
+            }else if (id("com.ss.android.ugc.aweme:id/ln2").exists() == true){
+                try{
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }
+            }else{
+                back();sleep(1200);back();sleep(1200);
+                continue startlabel;
+            }
+            inputMSG();
+            if(desc(SiXinMSG).exists() == false){
+                setText(SiXinMSG);sleep(800);
+                try{
+                    new CycloneUntil.CyclonePublic(desc,"发送",false,false,"click",0).elemClick();sleep(2000);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(desc,"发送",false,false,"click",0).elemClick();sleep(2000);
+                }
+            }else{
+                toast("当前用户已发送过 不再发送消息")
+            }
+            back();sleep(2000);back();sleep(2000);
+        }catch(error){
+            sleep(5000);
+            while(text("请完成下列验证后继续:").exists() == true){
+                ImageUntil.slideRecognition();
+            }
+            stopApp("抖音");
+            AppUntil.start("抖音",5000);
+            // new CycloneUntil.CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(5000);
+            click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(5000);
+    
+            while(text("请完成下列验证后继续:").exists() == true){
+                ImageUntil.slideRecognition();
+            }
+            if(num == 50){
+                stopApp("抖音");
+                AppUntil.start("抖音",5000);
+                new CycloneUntil.CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(1500);
+            }
+            try{
+                setText(itemArray[2]);sleep(3000);
+            }catch(error){
+                while(text("请完成下列验证后继续:").exists() == true){
+                    ImageUntil.slideRecognition();
+                }
+                setText(itemArray[2]);sleep(3000);
+            }
+            try{
+                // new CycloneUntil.CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(1500);
+                click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(1500);
+    
+    
+            }catch(error){
+                while(text("请完成下列验证后继续:").exists() == true){
+                    ImageUntil.slideRecognition();
+                }
+                // new CycloneUntil.CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(2000);
+                click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(2000);
+    
+    
+            }
+            if(text("您今日的搜索次数已达上限").exists() == true){
+                toastLog("上限了。结束运行")
+                break startlabel;
+            }
+            if(id("android:id/text1").exists() == true){
+                try{
+                    new CycloneUntil.CyclonePublic(id,"android:id/text1",false,false,"click",2).elemClick();sleep(1200);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(id,"android:id/text1",false,false,"click",2).elemClick();sleep(1200);
+                }
+            }
+            if(descMatches(".*抖音号: .*").find()[0].text().split("抖音号: ")[1] != "" ){
+                try{
+                    click(descMatches(".*抖音号:  .*").find()[0].bounds().centerX(),descMatches(".*抖音号: .*").find()[0].bounds().centerY());sleep(2500);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    try{
+                        click(descMatches(".*抖音号:  .*").find()[0].bounds().centerX(),descMatches(".*抖音号: .*").find()[0].bounds().centerY());sleep(2500);
+                    }catch(error){
+                        //抖音号不匹配
+                        continue;
+                    }
+                }
+            }else{
+                toast("抖音号不匹配 继续下一个任务")
+                continue;
+            }
+            //点关注私信
+            if(id("com.ss.android.ugc.aweme:id/ln1").exists() == true){
+                try{
+                    new CycloneUntil.CyclonePublic(id,"com.ss.android.ugc.aweme:id/ln1",false,false,"click",0).elemClick();sleep(2500);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(id,"com.ss.android.ugc.aweme:id/ln1",false,false,"click",0).elemClick();sleep(2500);
+                }
+                try{
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }
+    
+            }else if (id("com.ss.android.ugc.aweme:id/ln2").exists() == true){
+                try{
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(desc,"更多",false,false,"click",0).elemClick();sleep(2000);
+                    new CycloneUntil.CyclonePublic(text,"发私信",false,false,"click",0).elemClick();sleep(2000);
+                }
+            }else{
+                back();sleep(1200);back();sleep(1200);
+                continue startlabel;
+            }
+            inputMSG();
+            if(desc(SiXinMSG).exists() == false){
+                setText(SiXinMSG);sleep(800);
+                try{
+                    new CycloneUntil.CyclonePublic(desc,"发送",false,false,"click",0).elemClick();sleep(1500);
+                }catch(error){
+                    while(text("请完成下列验证后继续:").exists() == true){
+                        ImageUntil.slideRecognition();
+                    }
+                    new CycloneUntil.CyclonePublic(desc,"发送",false,false,"click",0).elemClick();sleep(1500);
+                }
+            }else{
+                toast("当前用户已发送过 不再发送消息")
+            }
+            back();sleep(1500);back();sleep(1500);
+            continue startlabel;
+        }
+    }
     log('执行结束');
+    home();
 }
 
 /**
@@ -138,4 +404,10 @@ function DoMainProcess(DouYinNameList, SiXinMSG) {
     }
 
     thread.interrupt(); // 停止该线程
+}
+
+function inputMSG(){
+    if(desc("语言").exists() == false){
+        className("android.widget.ImageView").find()[className("android.widget.ImageView").find().length - 1].click();sleep(1200)
+    }
 }
