@@ -75,37 +75,6 @@ ui.layout(
 // *******************公用类***************
 // ***************************************
 // versionCode 20.7.0
-const StartApp = function(){
-    function StartApp(code0,code1){
-        this.appName = code0
-        this.time = code1
-    }
-    StartApp.prototype.start = function(){
-        launchApp(this.appName);sleep(6000);
-        // home();sleep(2000)
-        appPackage = getPackageName(this.appName)
-        if(appPackage == null){
-            return new AutoJsException("app未安装").throw()
-        }
-        // currentPackageName = currentPackage()
-        // while(currentPackageName != appPackage){
-        //     launchApp(this.appName);sleep(this.time);
-        //     appPackage = getPackageName(this.appName)
-        //     currentPackageName = currentPackage()
-        // }
-        return this.backIndex()
-    }
-
-    StartApp.prototype.backIndex = function(){
-        while(true){
-            while(text("首页").exists() == false && text("朋友").exists() == false && text("消息").exists() == false && text("我").exists() == false){
-                back();sleep(1500)
-            }
-            return StartApp
-        }
-    }
-    return StartApp
-}();
 const AutoJsException = function(){
     function AutoJsException(code0){
         this.message = code0
@@ -228,121 +197,40 @@ const CyclonePublic = function(){
 // ******************处理滑块验证***********
 // ***************************************
 
-// /**
-//  * 开始识别
-//  */
-//  function start() {
-//     var img = getScreenImage();sleep(2000)
-//     if (img) {
-//         log("截图成功，进行识别滑块！");
-//     } else {
-//         log('截图失败，重新截图');
-//         return;
-//     };
+/**
+ * 初始化app
+ * @param {number} app_name app名字
+ */
+ function call_back_init(app_name){
+    home();launchApp(app_name);sleep(6000);
+    let start_app = 1;
+    let retry_count = 5;
+    while(waitForApp(app_name) == false){
+        launchApp(app_name);sleep(6000);
+        start_app ++
+        if(start_app > retry_count){
+            //提交运行状态为启动失败  
+            //抛异常
+            throw new AutoJsException("app未安装").throw()
+            // break
+        }
+    }
+}
 
-//     var x = getPointX(img,0.7);
-//     console.info("识别结果滑块X坐标：" + x);
-//     // swipe(147, 1530, x+270, 1530,800);
-//     gestures([0, 500, [155, 1530], [x, 1530]],
-//         [0, 500, [160, 1530], [x, 1530]]);
-//     sleep(2000);
-//     return true
-// }
-
-// /**
-//  * 获取缺口位置的x坐标
-//  * 传入值 img, 识别精度(precision)
-//  */
-// function getPointX(img,precision){
-//     var xCount = 0;
-//     var finnalX = 0;
-//     for(var x = 270; x < 950; x += 5){    //横向遍历像素点，间隔5个像素点
-//         // var row = "";
-//         var tempCount = 0
-//         for(var y = 570; y < 1070; y+=5){      //找到黑点最多的y轴
-//             if(isBlackPoint(x,y,img,precision)){
-//                 // row +="1";
-//                 tempCount += 1;
-//             }else{
-//                 // row += "0";
-//             }
-//         }
-//         if( tempCount >= xCount ){
-//             xCount = tempCount;
-//             finnalX = x
-//         }
-//         // console.log(row);
-//     }
-//     return finnalX
-// }
-
-// /**
-//  * 判断点是否为黑色点
-//  * 传入值 坐标(x,y), img, 识别精度(precision)
-//  */
-// function isBlackPoint(x, y,img,precision) {
-//     var rgb = images.pixel(img,x,y);    //此时获取到的是ARGB
-//     var r = (rgb & 0xff0000) >> 16;      //得到R
-//     var g = (rgb & 0xff00) >> 8;            //得到G
-//     var b = (rgb & 0xff);                        //得到B
-//     var criticalValue = 255 * (1 - precision);
-//     if (r <= criticalValue && g <= criticalValue && b <= criticalValue) {
-//         return true;
-//     }
-//     return false;
-// }
-
-// /**
-//  * 判断点是否为白色点
-//  * 传入值 坐标(x,y), img, 识别精度(precision)
-//  */
-// function isWhitePoint(x, y,img,precision) {
-//     var rgb = images.pixel(img,x,y);  //此时获取到的是ARGB
-//     var r = (rgb & 0xff0000) >> 16;   //得到R
-//     var g = (rgb & 0xff00) >> 8;        //得到G
-//     var b = (rgb & 0xff);                    //得到B
-//     var criticalValue = 255 * precision;
-//     if (r >= criticalValue && g >= criticalValue && b >= criticalValue) {
-//         return true;
-//     }
-//     return false;
-// }
-
-// /**
-//  * 使用命令截图，返回imgae对像。
-//  */
-// if(!images.requestScreenCapture()){
-//     log("请求失败");
-//     exit();
-// }
-// function getScreenImage(){
-
-//     // var pictures = images.clip(captureScreen(),device.width / 2,420,1038 - device.width / 2,1005 - 420)
-//     var pictures = captureScreen()
-//     // pictures = images.grayscale(pictures)
-//     // pictures = images.threshold(pictures,60,200)
-//     // images.save(pictures,"/sdcard/pictures.png","png",100)
-//     return pictures
-// }
-
-// // *********************************************
-// // *************************处理广告*************
-// // *********************************************
-// function close_AD(){
-//     //函数功能 关闭启动广告
-//     threads.start(function () {
-//         while(textMatches(/.*跳过.*/).exists() == true){
-//             new CyclonePublic(text,/.*跳过.*/,true,true,"click",1).elemClick()
-//             console.log("点击了跳过广告")
-//         }
-//     })
-//     threads.start(function () {
-//         while(descMatches(/.*跳过.*/).exists() == true){
-//             new CyclonePublic(desc,/.*跳过.*/,true,true,"click",1).elemClick()
-//             console.log("点击了跳过广告")
-//         }
-//     })
-// }
+/**
+ * 获取当前界面运行app 是否期望中的app 返回true 或 false
+ * @param {string} app_name 
+ * @returns 
+ */
+ function waitForApp(app_name){
+    let app_package_name = getPackageName(app_name)
+    let now_status = currentPackage(app_package_name)
+    if(now_status == app_package_name){
+        return true
+    }else{
+        return false
+    }
+}
 
 
 function inputMSG(){
@@ -385,18 +273,7 @@ function handleExcel(InputExcelRoute, sheetIndex, PrimaryKey) {
     let xlsFile = new File(InputExcelRoute);
     // 2.根据xls对象，得到工作簿对象
     console.log('xlsFile: '+xlsFile);
-    // let workbook;
-    // try {
     let workbook = Workbook.getWorkbook(xlsFile);
-    // } catch (error) {
-    //     console.log('有异常');
-    //     let a = threads.start(function () {
-    //         workbook = Workbook.getWorkbook(xlsFile);
-    //     })
-    //     console.log(a.isAlive())
-    //     a.join();
-    //     console.log(a.isAlive())
-    // }
     // 3.获取第0个sheet对象
     let sheet = workbook.getSheet(sheetIndex);
     console.log('要读取的sheet:' + sheet);
@@ -431,7 +308,6 @@ let InputExcelRoute = '';
 let SiXinMSG = '';
 let DouYinNameList = '';
 
-
 ui.callback.click(() =>{
     // 取出填写的Excel默认路径,建联话术语句
     InputExcelRoute = ui.InputExcelRoute.text();
@@ -444,35 +320,22 @@ ui.callback.click(() =>{
         // 这里需要启用多线程，因为在ui下他会每16ms会执行一次刷新页面，如果直接把sleep这种阻塞线程或者需要长时间回调（例如调接口）这种，
         // 在ui页面上会造成长时间等待，故新启动一个线程去处理这些任务
         threads.start(function () { 
-            // 2、返回桌面
-            home();
-            // 3、打开抖音
-            new StartApp("抖音",5000).start();sleep(2000);
+            // 1、打开抖音
+            call_back_init("抖音");
             // 4、查看excel数据是否加载完成
             console.log('DouYinNameList:' +DouYinNameList);
             // 5、执行主函数
             DoMainProcess(DouYinNameList, SiXinMSG);
         })
     }
-    // threads.shutDownAll();
-    // threads.start(function () {
-    // var beginBtn;
-    //    if (beginBtn = classNameContains("Button").textContains("立即开始").findOne(2000)) {
-    //        beginBtn.click();sleep(1000)
-    //    }
-    // if(text("检测到更新").exists() && text("以后再说").exists()){
-    //     text("以后再说").find()[0].click();
-    // }
-    // });
 });
-
 threads.shutDownAll();
-
 
 function DoMainProcess(DouYinNameList, SiXinMSG) {
     let num = 0
     console.log('开始执行主流程');
     console.log('DouYinNameList1:' + DouYinNameList);
+    toast("开始执行了");
     click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(1500);
     startlabel:
     for(let i = 1; i < DouYinNameList.length; i++) {
@@ -484,7 +347,7 @@ function DoMainProcess(DouYinNameList, SiXinMSG) {
             // 防止抖音崩溃到主页
             if(num == 50){
                 stopApp("抖音");
-                new StartApp("抖音",5000).start();
+                call_back_init("抖音");
                 // new CyclonePublic(desc,"搜索",false,false,"click",0).elemClick();sleep(1500);
                 click(desc("搜索").find()[0].bounds().centerX(),desc("搜索").find()[0].bounds().centerY());sleep(1500);
     
@@ -716,5 +579,5 @@ function DoMainProcess(DouYinNameList, SiXinMSG) {
     }
     log('执行结束');
     home();
-    
+    toast("执行结束");
 }
