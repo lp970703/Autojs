@@ -1,8 +1,7 @@
-
 "ui";
 // importClass(com.cyclone.rpadroid.runtime.utils.AutoJsScriptUtils);
 // var file = AutoJsScriptUtils.readFile("/sdcard/脚本/excel/抖音建联1.xls")
-// 抖音建联v1：原始版本，不带广告，利用jxl来获取excel数据
+// 抖音建联v3：带有调接口的模板，可以控制应用使用次数
 runtime.loadJar("./jxl-2.6.12.1.jar")
 importClass("java.io.File")
 importClass("jxl.Cell")
@@ -55,6 +54,21 @@ ui.layout(
             <View bg="#FFEFD5" h="*" w="12"/>
         </card>
 
+        <card w="*" h="150" margin="24 5" cardCornerRadius="8dp"
+            cardElevation="10dp" gravity="center_vertical">
+            <vertical padding="18 8" h="auto">
+                <text textColor = "black" textSize="14sp" >
+                    3、请输入应用八位数的license
+                </text>
+                <input id = "appLicense" singleLine = 'true' alpha="0.5" text="-y8U6rYl"></input>
+                <text textStyle = "italic" padding="1 1 1 1" bg = "#34b1e7" 
+                    textColor = "black" textSize="10sp">
+                    例如：-y8U6rYl
+                </text>
+            </vertical>
+            <View bg="#FFEFD5" h="*" w="12"/>
+        </card>
+
         <text textColor = "black" textSize="16sp" margin="22 12">
             三、定时任务
         </text>
@@ -81,6 +95,7 @@ const AutoJsException = function(){
         this.message = code0
     }
     AutoJsException.prototype.throw = function(){
+        toast(this.message)
         log(this.message)
         throw new AutoJsException("ExceptionForNoExist","",this.message)
     }
@@ -192,6 +207,22 @@ const CyclonePublic = function(){
         }
     }
     return CyclonePublic
+}();
+
+const HttpApiPublic = function(){
+    function HttpApiPublic(url, headers, body, callback){
+        this.url = url
+        this.headers = headers
+        this.body = body
+        this.callback = callback    
+    }
+    HttpApiPublic.prototype.postApi = function(){
+        let res;
+        res = http.post(this.url, this.body);
+        var resBody = res.body.json()
+        return resBody;
+    }
+    return HttpApiPublic
 }();
 
 // ***************************************
@@ -308,25 +339,44 @@ function getArrayExcelData(sheet, PrimaryKey) {
 let InputExcelRoute = '';
 let SiXinMSG = '';
 let DouYinNameList = '';
+let appLicense = '';
 
 ui.callback.click(() =>{
     // 取出填写的Excel默认路径,建联话术语句
     InputExcelRoute = ui.InputExcelRoute.text();
     SiXinMSG = ui.SiXinMSG.text();
+    appLicense = ui.appLicense.text();
     console.log('InputExcelRoute:' + InputExcelRoute);
     console.log('SiXinMSG:' + SiXinMSG);
+    console.log('appLicense:' + appLicense);
     // 1、处理excel数据
     DouYinNameList = handleExcel(InputExcelRoute, 0, 0);
     if (DouYinNameList) {
         // 这里需要启用多线程，因为在ui下他会每16ms会执行一次刷新页面，如果直接把sleep这种阻塞线程或者需要长时间回调（例如调接口）这种，
         // 在ui页面上会造成长时间等待，故新启动一个线程去处理这些任务
         threads.start(function () { 
-            // 1、打开抖音
-            call_back_init("抖音");
-            // 4、查看excel数据是否加载完成
-            console.log('DouYinNameList:' +DouYinNameList);
-            // 5、执行主函数
-            DoMainProcess(DouYinNameList, SiXinMSG);
+            // 2.先查询服务端接口次数
+            let getRemainUseTime = new HttpApiPublic('http://10.86.9.149:7001/cyclone/v1/get/remainUseTime', {}, {
+                appName: "抖音建联",
+                appLicense: appLicense,
+            }).postApi();
+            console.log('resStatus:' + getRemainUseTime.status)
+            if (getRemainUseTime.status = 200 && getRemainUseTime.data.allowUseTime > getRemainUseTime.data.totalUseTime) {
+                // 3、打开抖音
+                call_back_init("抖音");
+                // 4、查看excel数据是否加载完成
+                console.log('DouYinNameList:' + DouYinNameList);
+                // 5、执行主函数
+                let mainStatus = DoMainProcess(DouYinNameList, SiXinMSG);
+                if (mainStatus = 'finish') {
+                    new HttpApiPublic('http://10.86.9.149:7001/cyclone/v1/update/TotalUseTime', {}, {
+                        appName: "抖音建联",
+                        appLicense: appLicense,
+                    }).postApi();
+                    toast(mainStatus);
+                    console.log('mainStatus:' + mainStatus);
+                }
+            }
         })
     }
 });
@@ -582,4 +632,5 @@ function DoMainProcess(DouYinNameList, SiXinMSG) {
     log('执行结束');
     home();
     toast("执行结束");
+    return "finish";
 }
