@@ -1,0 +1,13 @@
+{
+    "name": "抖音建联",
+    "main": "main.js",
+    "ignore": [
+        "build"
+    ],
+    "packageName": "com.example",
+    "versionName": "1.0.0",
+    "versionCode": 1,
+    "launchConfig": {
+        "hideLogs": false
+    }
+}
