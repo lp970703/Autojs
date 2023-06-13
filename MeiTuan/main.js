@@ -401,7 +401,7 @@ function findStore() {
  */
 function selectAddress(index) {
     console.log("1.1 点击外卖");
-    className("android.view.View").desc("外卖").findOne().click();
+    className("android.widget.LinearLayout").desc("外卖").findOne().click();
     // if(desc("关闭").exists() == true) {
     //     desc("关闭").find()[0].click();
     //     console.log("1.2 关闭广告弹框")
